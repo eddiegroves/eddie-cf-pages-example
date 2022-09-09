@@ -16,7 +16,7 @@ jobs:
           npx wrangler pages publish dist/ \
           --project-name=eddie-cf-pages-example \
           --branch=production \
-          --commit-hash=${{ github.sha }}\
+          --commit-hash=${{ github.sha }} \
           --commit-message="${{github.event.head_commit.message}}"
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
