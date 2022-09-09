@@ -7,17 +7,29 @@ jobs:
   deploy:
     runs-on: ubuntu-22.04
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-      - name: Build
-        run: make build
-      - name: Deploy production
+      ###############################
+      # - name: Checkout            #
+      #   uses: actions/checkout@v2 #
+      # - name: Build               #
+      #   run: make build           #
+      ###############################
+      - name: Create gh deployment
         run: |
-          npx wrangler@2.0.29 pages publish dist/ \
-          --project-name=eddie-cf-pages-example \
-          --branch=production \
-          --commit-hash=${{ github.sha }} \
-          --commit-message="${{github.event.head_commit.message}}"
-        env:
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          curl \
+          -X POST \
+          -H "Accept: application/vnd.github+json" \
+          -H "Authorization: Bearer ${{ github.token }}" \
+          https://api.github.com/repos/${{ github.action_repository }}/deployments \
+          -d '{"ref":"main","description":"Cloudflare Pages deploy"}'
+      ###################################################################
+      # - name: Deploy production                                       #
+      #   run: |                                                        #
+      #     npx wrangler@2.0.29 pages publish dist/ \                   #
+      #     --project-name=eddie-cf-pages-example \                     #
+      #     --branch=production \                                       #
+      #     --commit-hash=${{ github.sha }} \                           #
+      #     --commit-message="${{github.event.head_commit.message}}"    #
+      #   env:                                                          #
+      #     CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }} #
+      #     CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}   #
+      ###################################################################
