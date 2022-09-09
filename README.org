@@ -1,0 +1,16 @@
+* What is this?
+
+A simple demonstration of Cloudflare Pages and a place to try things out.
+
+The url of the example is located at:
+
+#+name: get-url
+#+begin_src sh :results raw :wrap src :exports none
+curl -X GET "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/eddie-cf-pages-example" \
+     -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" | gojq -r '.result.domains[0]'
+#+end_src
+
+#+RESULTS: get-url
+#+begin_src
+eddie-cf-pages-example.pages.dev
+#+end_src
