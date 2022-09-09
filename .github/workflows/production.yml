@@ -4,7 +4,7 @@ on:
     branches:
       - main
 jobs:
-  poll-cf-deploy:
+  deploy:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout
@@ -13,7 +13,7 @@ jobs:
         run: make build
       - name: Deploy production
         run: |
-          npx wrangler pages publish dist/ \
+          npx wrangler@2.0.29 pages publish dist/ \
           --project-name=eddie-cf-pages-example \
           --branch=production \
           --commit-hash=${{ github.sha }} \
