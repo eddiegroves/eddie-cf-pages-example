@@ -17,9 +17,9 @@ jobs:
         run: |
           curl \
           -X POST \
+          https://api.github.com/repos/${{ github.repository }}/deployments \
           -H "Accept: application/vnd.github+json" \
           -H "Authorization: Bearer ${{ github.token }}" \
-          https://api.github.com/repos/${{ github.action_repository }}/deployments \
           -d '{"ref":"main","auto_merge":false,"environment":"production","production_environment":true,"description":"Cloudflare Pages","required_contexts":[]}'
       ###################################################################
       # - name: Deploy production                                       #
