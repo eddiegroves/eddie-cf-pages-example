@@ -7,38 +7,91 @@ jobs:
   deploy:
     runs-on: ubuntu-22.04
     steps:
-      ###############################
-      # - name: Checkout            #
-      #   uses: actions/checkout@v2 #
-      # - name: Build               #
-      #   run: make build           #
-      ###############################
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Build
+        run: make build
       - name: Create gh deployment
         id: create-gh-deployment
         run: |
           curl \
-          -X POST \
-          https://api.github.com/repos/${{ github.repository }}/deployments \
-          -H "Accept: application/vnd.github+json" \
+            -X POST \
+            https://api.github.com/repos/${{ github.repository }}/deployments \
+            -H "Accept: application/vnd.github+json" \
           -H "Authorization: Bearer ${{ github.token }}" \
-          -d '{"ref":"main","auto_merge":false,"environment":"production","production_environment":true,"description":"Cloudflare Pages","required_contexts":[]}' | jq '.id' | xargs -I {} echo "::set-output name=gh_deployment_id::{}"
-      - name: Update gh deployment status
+          -d '{"auto_merge":false,"description":"Cloudflare Pages","environment":"production","production_environment":true,"ref":"main","required_contexts":[]}' \
+          | jq '.id' | xargs -I {} echo "::set-output name=gh_deployment_id::{}"
+      - name: Deploy production
         run: |
+          npx wrangler@2.0.29 pages publish dist/ \
+          --project-name=eddie-cf-pages-example \
+          --branch=production \
+          --commit-hash=${{ github.sha }} \
+          --commit-message="${{github.event.head_commit.message}}"
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      - name: Poll deployment status
+        run: |
+          count=0
+          while [ $count -lt 60 ]
+          do
+              { IFS= read -r project
+              IFS= read -r environment
+              IFS= read -r url
+              IFS= read -r stage
+              IFS= read -r status
+              echo "project=$project"
+              echo "environment=$environment"
+              echo "url=$url"
+              echo "stage=$stage"
+              echo "status=$status"
+              } < <(curl --silent -X GET "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$CLOUDFLARE_PROJECT_NAME/deployments" -H "Authorization: Bearer $CF_API_TOKEN" | jq -r --arg commit $COMMIT_HASH '.result[] | select(.deployment_trigger.metadata.commit_hash == $commit) | .project_name, .environment, .aliases[0], .latest_stage.name, .latest_stage.status')
+          
+              if [ "$status" = "failed" ]; then
+                  echo "😢 sad face"
+          
+                  curl \
+                  -X POST \
+                  https://api.github.com/repos/${{ github.repository }}/deployments/${{ steps.create-gh-deployment.outputs.gh_deployment_id }}/statuses \
+                  -H "Accept: application/vnd.github+json" \
+                  -H "Authorization: Bearer ${{ github.token }}" \
+                  -d '{"description":"Cloudflare Pages deployment failed.","environment":"production","state":"failure"}'
+                  exit 0
+              fi
+          
+              if [ "$stage" = "deploy" ] && [ "$status" = "success" ]; then
+                  echo "🤗 happy face"
+          
+                  curl \
+                  -X POST \
+                  https://api.github.com/repos/${{ github.repository }}/deployments/${{ steps.create-gh-deployment.outputs.gh_deployment_id }}/statuses \
+                  -H "Accept: application/vnd.github+json" \
+                  -H "Authorization: Bearer ${{ github.token }}" \
+                  -d '{"description":"Cloudflare Pages deployment success.","environment":"production","state":"success"}'
+                  exit 0
+              fi
+          
+              curl \
+              -X POST \
+              https://api.github.com/repos/${{ github.repository }}/deployments/${{ steps.create-gh-deployment.outputs.gh_deployment_id }}/statuses \
+              -H "Accept: application/vnd.github+json" \
+              -H "Authorization: Bearer ${{ github.token }}" \
+              -d '{"description":"Cloudflare Pages deployment in progress.","environment":"production","state":"in_progress"}'
+          
+              sleep 5s
+              ((count++))
+          done
+          
+          echo "😭 super sad"
+          
           curl \
           -X POST \
           https://api.github.com/repos/${{ github.repository }}/deployments/${{ steps.create-gh-deployment.outputs.gh_deployment_id }}/statuses \
           -H "Accept: application/vnd.github+json" \
           -H "Authorization: Bearer ${{ github.token }}" \
-          -d '{"environment":"production","state":"success","description":"Cloudflare Pages deployment finished successfully."}'
-      ###################################################################
-      # - name: Deploy production                                       #
-      #   run: |                                                        #
-      #     npx wrangler@2.0.29 pages publish dist/ \                   #
-      #     --project-name=eddie-cf-pages-example \                     #
-      #     --branch=production \                                       #
-      #     --commit-hash=${{ github.sha }} \                           #
-      #     --commit-message="${{github.event.head_commit.message}}"    #
-      #   env:                                                          #
-      #     CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }} #
-      #     CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}   #
-      ###################################################################
+          -d '{"description":"Cloudflare Pages deployment unknown status.","environment":"production","state":"error"}'
+          exit 0
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
