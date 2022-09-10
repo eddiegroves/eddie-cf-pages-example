@@ -20,7 +20,7 @@ jobs:
           https://api.github.com/repos/${{ github.repository }}/deployments \
           -H "Accept: application/vnd.github+json" \
           -H "Authorization: Bearer ${{ github.token }}" \
-          -d '{"ref":"main","auto_merge":false,"environment":"production","production_environment":true,"description":"Cloudflare Pages","required_contexts":[]}' | jq ".id | xargs -I {} ::set-output name=gh_deployment_id::{}"
+          -d '{"ref":"main","auto_merge":false,"environment":"production","production_environment":true,"description":"Cloudflare Pages","required_contexts":[]}' | jq ".id | xargs -I {} echo "::set-output name=gh_deployment_id::{}"
       - name: Update gh deployment status
         run: |
           curl \
