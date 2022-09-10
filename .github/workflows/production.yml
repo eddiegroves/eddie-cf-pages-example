@@ -46,11 +46,11 @@ jobs:
               echo "url=$url"
               echo "stage=$stage"
               echo "status=$status"
-              } < <(curl --silent -X GET "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$CLOUDFLARE_PROJECT_NAME/deployments" -H "Authorization: Bearer $CF_API_TOKEN" | jq -r --arg commit $COMMIT_HASH '.result[] | select(.deployment_trigger.metadata.commit_hash == $commit) | .project_name, .environment, .aliases[0], .latest_stage.name, .latest_stage.status')
-          
+              } < <(curl --silent -X GET "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$CLOUDFLARE_PROJECT_NAME/deployments" -H "Authorization: Bearer $CF_API_TOKEN" | jq -r --arg commit ${{ github.sha }} '.result[] | select(.deployment_trigger.metadata.commit_hash == $commit) | .project_name, .environment, .aliases[0], .latest_stage.name, .latest_stage.status')
+
               if [ "$status" = "failed" ]; then
                   echo "😢 sad face"
-          
+
                   curl \
                   -X POST \
                   https://api.github.com/repos/${{ github.repository }}/deployments/${{ steps.create-gh-deployment.outputs.gh_deployment_id }}/statuses \
@@ -59,10 +59,10 @@ jobs:
                   -d '{"description":"Cloudflare Pages deployment failed.","environment":"production","state":"failure"}'
                   exit 0
               fi
-          
+
               if [ "$stage" = "deploy" ] && [ "$status" = "success" ]; then
                   echo "🤗 happy face"
-          
+
                   curl \
                   -X POST \
                   https://api.github.com/repos/${{ github.repository }}/deployments/${{ steps.create-gh-deployment.outputs.gh_deployment_id }}/statuses \
@@ -71,20 +71,20 @@ jobs:
                   -d '{"description":"Cloudflare Pages deployment success.","environment":"production","state":"success"}'
                   exit 0
               fi
-          
+
               curl \
               -X POST \
               https://api.github.com/repos/${{ github.repository }}/deployments/${{ steps.create-gh-deployment.outputs.gh_deployment_id }}/statuses \
               -H "Accept: application/vnd.github+json" \
               -H "Authorization: Bearer ${{ github.token }}" \
               -d '{"description":"Cloudflare Pages deployment in progress.","environment":"production","state":"in_progress"}'
-          
+
               sleep 5s
               ((count++))
           done
-          
+
           echo "😭 super sad"
-          
+
           curl \
           -X POST \
           https://api.github.com/repos/${{ github.repository }}/deployments/${{ steps.create-gh-deployment.outputs.gh_deployment_id }}/statuses \
