@@ -14,18 +14,19 @@ jobs:
       #   run: make build           #
       ###############################
       - name: Create gh deployment
+        id: create-gh-deployment
         run: |
           curl \
           -X POST \
           https://api.github.com/repos/${{ github.repository }}/deployments \
           -H "Accept: application/vnd.github+json" \
           -H "Authorization: Bearer ${{ github.token }}" \
-          -d '{"ref":"main","auto_merge":false,"environment":"production","production_environment":true,"description":"Cloudflare Pages","required_contexts":[]}' | jq '.id' | xargs -I {} echo ::set-output name=gh_deployment_id::{}
+          -d '{"ref":"main","auto_merge":false,"environment":"production","production_environment":true,"description":"Cloudflare Pages","required_contexts":[]}' | jq '.id' | xargs -I {} echo "::set-output name=gh_deployment_id::{}"
       - name: Update gh deployment status
         run: |
           curl \
           -X POST \
-          https://api.github.com/repos/${{ github.repository }}/deployments/${{ steps.vars.outputs.gh_deployment_id }}/statuses \
+          https://api.github.com/repos/${{ github.repository }}/deployments/${{ steps.create-gh-deployment.outputs.gh_deployment_id }}/statuses \
           -H "Accept: application/vnd.github+json" \
           -H "Authorization: Bearer ${{ github.token }}" \
           -d '{"environment":"production","state":"success","description":"Cloudflare Pages deployment finished successfully."}'
