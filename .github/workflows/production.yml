@@ -64,8 +64,8 @@ jobs:
               state: Literal[
                   "error", "failure", "inactive", "in_progress", "queued", "pending", "success"
               ],
-              log_url: str,
-              environment_url: str,
+              log_url: str = None,
+              environment_url: str = None,
           ):
 
               payload = {
