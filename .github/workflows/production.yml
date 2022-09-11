@@ -33,6 +33,14 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       - name: Poll deployment status
         shell: python
+        with:
+          commit_hash: ${{ github.sha }}
+          github_deployment_id: ${{ steps.create-gh-deployment.outputs.gh_deployment_id }}
+          github_repository: ${{ github.repository }}
+          cloudflare_project_name: eddie-cf-pages-example
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
           import http.client
           import json
@@ -144,11 +152,3 @@ jobs:
               state="error",
           )
           exit(1)
-        with:
-          commit_hash: ${{ github.sha }}
-          github_deployment_id: ${{ steps.create-gh-deployment.outputs.gh_deployment_id }}
-          github_repository: ${{ github.repository }}
-          cloudflare_project_name: eddie-cf-pages-example
-        env:
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
