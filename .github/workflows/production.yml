@@ -12,7 +12,7 @@ jobs:
       - name: Build
         run: make build
       - id: foo
-        uses: eddiegroves/cloudflare-pages-deploy-action@9c7524d4ab6c1eed337933e7a80a3f4e97197ce2
+        uses: eddiegroves/cloudflare-pages-deploy-action@8918fc74a85001fb6c5e834c719eba16c8896855
         with:
           cloudflare-publish-directory: dist/
           cloudflare-branch: production
