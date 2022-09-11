@@ -34,6 +34,7 @@ jobs:
       - name: Poll deployment status
         shell: python
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           INPUT_COMMIT_HASH: ${{ github.sha }}
