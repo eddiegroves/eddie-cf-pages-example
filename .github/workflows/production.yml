@@ -17,5 +17,5 @@ jobs:
           cloudflare-publish-directory: dist/
           cloudflare-branch: production
           cloudflare-pages-project-name: eddie-cf-pages-example
-          cloudflare-account-id: ${{ secret.CLOUDFLARE_ACCOUNT_ID }}
-          cloudflare-api-token: ${{ secret.CLOUDFLARE_API_TOKEN }}
+          cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
