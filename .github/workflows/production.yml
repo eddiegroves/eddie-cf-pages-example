@@ -49,13 +49,13 @@ jobs:
           from time import sleep
           from typing import Literal
 
-          INPUT_COMMIT_HASH = os.environ["INPUT_COMMIT_HASH"]
-          INPUT_GITHUB_DEPLOYMENT_ID = os.environ["INPUT_GITHUB_DEPLOYMENT_ID"]
-          INPUT_GITHUB_REPOSITORY = os.environ["INPUT_GITHUB_REPOSITORY"]
-          INPUT_CLOUDFLARE_PROJECT_NAME = os.environ["INPUT_CLOUDFLARE_PROJECT_NAME"]
-          GITHUB_TOKEN = os.environ["GITHUB_TOKEN"]
-          CLOUDFLARE_API_TOKEN = os.environ["CLOUDFLARE_API_TOKEN"]
-          CLOUDFLARE_ACCOUNT_ID = os.environ["CLOUDFLARE_ACCOUNT_ID"]
+          commit_hash = os.environ["INPUT_COMMIT_HASH"]
+          github_deployment_id = os.environ["INPUT_GITHUB_DEPLOYMENT_ID"]
+          github_repository = os.environ["INPUT_GITHUB_REPOSITORY"]
+          cloudflare_project_name = os.environ["INPUT_CLOUDFLARE_PROJECT_NAME"]
+          github_token = os.environ["GITHUB_TOKEN"]
+          cloudflare_api_token = os.environ["CLOUDFLARE_API_TOKEN"]
+          cloudflare_account_id = os.environ["CLOUDFLARE_ACCOUNT_ID"]
 
 
           def create_github_deployment_status(
@@ -67,12 +67,7 @@ jobs:
               log_url: str = None,
               environment_url: str = None,
           ):
-
-              payload = {
-                  "description": description,
-                  "environment": environment,
-                  "state": state
-              }
+              payload = {"description": description, "environment": environment, "state": state}
 
               if log_url:
                   payload["log_url"] = log_url
@@ -84,13 +79,13 @@ jobs:
                   "User-Agent": "eddiegroves/action/cloudflare-deploy",
                   "Content-Type": "application/json",
                   "Accept": "application/vnd.github+json",
-                  "Authorization": f"Bearer {GITHUB_TOKEN}",
+                  "Authorization": f"Bearer {github_token}",
               }
 
               githubApi = http.client.HTTPSConnection("api.github.com")
               githubApi.request(
                   "POST",
-                  f"/repos/{INPUT_GITHUB_REPOSITORY}/deployments/{INPUT_GITHUB_DEPLOYMENT_ID}/statuses",
+                  f"/repos/{github_repository}/deployments/{github_deployment_id}/statuses",
                   json.dumps(payload),
                   headers,
               )
@@ -100,13 +95,13 @@ jobs:
               headers = {
                   "User-Agent": "eddiegroves/action/cloudflare-deploy",
                   "Accept": "application/json",
-                  "Authorization": f"Bearer {CLOUDFLARE_API_TOKEN}",
+                  "Authorization": f"Bearer {cloudflare_api_token}",
               }
 
               cloudflareApi = http.client.HTTPSConnection("api.cloudflare.com")
               cloudflareApi.request(
                   "GET",
-                  f"/client/v4/accounts/{CLOUDFLARE_ACCOUNT_ID}/pages/projects/{INPUT_CLOUDFLARE_PROJECT_NAME}/deployments",
+                  f"/client/v4/accounts/{cloudflare_account_id}/pages/projects/{cloudflare_project_name}/deployments",
                   "",
                   headers,
               )
@@ -120,8 +115,8 @@ jobs:
                       "-r",
                       "--arg",
                       "commit",
-                      INPUT_COMMIT_HASH,
-                      ".result[] | select(.deployment_trigger.metadata.commit_hash == $commit) | { project_name, environment,  url: (.aliases[0] // .url), stage: .latest_stage.name, status: .latest_stage.status }",
+                      commit_hash,
+                      ".result[] | select(.deployment_trigger.metadata.commit_hash == $commit) | { id, project_name, environment,  url: (.aliases[0] // .url), stage: .latest_stage.name, status: .latest_stage.status }",
                   ],
                   input=data,
                   capture_output=True,
@@ -142,7 +137,7 @@ jobs:
                       description="Cloudflare Pages deployment failed.",
                       environment="production",
                       state="failure",
-                      environment_url=deployment["url"],
+                      log_url=f"https://dash.cloudflare.com?to=/:account/pages/view/{cloudflare_project_name}/{deployment['id']}",
                   )
                   exit(1)
 
@@ -152,6 +147,7 @@ jobs:
                       description="Cloudflare Pages deployment success.",
                       environment="production",
                       state="success",
+                      log_url=f"https://dash.cloudflare.com?to=/:account/pages/view/{cloudflare_project_name}/{deployment['id']}",
                       environment_url=deployment["url"],
                   )
                   exit(0)
@@ -161,7 +157,7 @@ jobs:
                   description="Cloudflare Pages deployment in progress.",
                   environment="production",
                   state="in_progress",
-                  environment_url=deployment["url"],
+                  log_url=f"https://dash.cloudflare.com?to=/:account/pages/view/{cloudflare_project_name}/{deployment['id']}",
               )
               sleep(5)
               count = count + 1
