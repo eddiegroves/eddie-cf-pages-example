@@ -67,13 +67,18 @@ jobs:
               log_url: str,
               environment_url: str,
           ):
+
               payload = {
                   "description": description,
                   "environment": environment,
-                  "state": state,
-                  "log_url": log_url,
-                  "environment_url": environment_url,
+                  "state": state
               }
+
+              if log_url:
+                  payload["log_url"] = log_url
+
+              if environment_url:
+                  payload["environment_url"] = environment_url
 
               headers = {
                   "User-Agent": "eddiegroves/action/cloudflare-deploy",
