@@ -33,66 +33,121 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       - name: Poll deployment status
         run: |
-          count=0
-          while [ $count -lt 60 ]
-          do
-              { IFS= read -r project
-              IFS= read -r environment
-              IFS= read -r url
-              IFS= read -r stage
-              IFS= read -r status
-              echo "project=$project"
-              echo "environment=$environment"
-              echo "url=$url"
-              echo "stage=$stage"
-              echo "status=$status"
-              } < <(curl --silent -X GET "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$CLOUDFLARE_PROJECT_NAME/deployments" -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" | jq -r --arg commit ${{ github.sha }} '.result[] | select(.deployment_trigger.metadata.commit_hash == $commit) | .project_name, .environment, .aliases[0] // .url, .latest_stage.name, .latest_stage.status')
+          import http.client
+          import json
+          import subprocess
+          from time import sleep
+          from typing import Literal
 
-              if [ "$status" = "failed" ]; then
-                  echo "😢 sad face"
 
-                  curl \
-                  -X POST \
-                  https://api.github.com/repos/${{ github.repository }}/deployments/${{ steps.create-gh-deployment.outputs.gh_deployment_id }}/statuses \
-                  -H "Accept: application/vnd.github+json" \
-                  -H "Authorization: Bearer ${{ github.token }}" \
-                  -d '{"description":"Cloudflare Pages deployment failed.","environment":"production","state":"failure"}'
-                  exit 0
-              fi
+          def create_github_deployment_status(
+              description: str,
+              environment: str,
+              state: Literal[
+                  "error", "failure", "inactive", "in_progress", "queued", "pending", "success"
+              ],
+          ):
+              payload = {
+                  "description": description,
+                  "environment": environment,
+                  "state": state,
+              }
 
-              if [ "$stage" = "deploy" ] && [ "$status" = "success" ]; then
-                  echo "🤗 happy face"
+              headers = {
+                  "User-Agent": "eddiegroves/action/cloudflare-deploy",
+                  "Content-Type": "application/json",
+                  "Accept": "application/vnd.github+json",
+                  "Authorization": f"Bearer {GITHUB_TOKEN}",
+              }
 
-                  curl \
-                  -X POST \
-                  https://api.github.com/repos/${{ github.repository }}/deployments/${{ steps.create-gh-deployment.outputs.gh_deployment_id }}/statuses \
-                  -H "Accept: application/vnd.github+json" \
-                  -H "Authorization: Bearer ${{ github.token }}" \
-                  -d '{"description":"Cloudflare Pages deployment success.","environment":"production","state":"success"}'
-                  exit 0
-              fi
+              githubApi = http.client.HTTPSConnection("api.github.com")
+              githubApi.request(
+                  "POST",
+                  f"/repos/{INPUT_GITHUB_REPOSITORY}/deployments/{INPUT_GITHUB_DEPLOYMENT_ID}/statuses",
+                  json.dumps(payload),
+                  headers,
+              )
 
-              curl \
-              -X POST \
-              https://api.github.com/repos/${{ github.repository }}/deployments/${{ steps.create-gh-deployment.outputs.gh_deployment_id }}/statuses \
-              -H "Accept: application/vnd.github+json" \
-              -H "Authorization: Bearer ${{ github.token }}" \
-              -d '{"description":"Cloudflare Pages deployment in progress.","environment":"production","state":"in_progress"}'
 
-              sleep 5s
-              ((count++))
-          done
+          def list_cloudflare_deployments():
+              headers = {
+                  "User-Agent": "eddiegroves/action/cloudflare-deploy",
+                  "Accept": "application/json",
+                  "Authorization": f"Bearer {CLOUDFLARE_API_TOKEN}",
+              }
 
-          echo "😭 super sad"
+              cloudflareApi = http.client.HTTPSConnection("api.cloudflare.com")
+              cloudflareApi.request(
+                  "GET",
+                  f"/client/v4/accounts/{CLOUDFLARE_ACCOUNT_ID}/pages/projects/{INPUT_CLOUDFLARE_PROJECT_NAME}/deployments",
+                  "",
+                  headers,
+              )
 
-          curl \
-          -X POST \
-          https://api.github.com/repos/${{ github.repository }}/deployments/${{ steps.create-gh-deployment.outputs.gh_deployment_id }}/statuses \
-          -H "Accept: application/vnd.github+json" \
-          -H "Authorization: Bearer ${{ github.token }}" \
-          -d '{"description":"Cloudflare Pages deployment unknown status.","environment":"production","state":"error"}'
-          exit 0
+              res = cloudflareApi.getresponse()
+              data = res.read().decode("utf-8")
+
+              p = subprocess.run(
+                  [
+                      "jq",
+                      "-r",
+                      "--arg",
+                      "commit",
+                      INPUT_COMMIT_HASH,
+                      ".result[] | select(.deployment_trigger.metadata.commit_hash == $commit) | { project_name, environment,  url: (.aliases[0] // .url), stage: .latest_stage.name, status: .latest_stage.status }",
+                  ],
+                  input=data,
+                  capture_output=True,
+                  text=True,
+                  check=True,
+              )
+
+              return json.loads(p.stdout)
+
+
+          count = 0
+          while count < 60:
+              deployment = list_cloudflare_deployments()
+
+              if deployment["status"] == "failed":
+                  print("😢 sad face")
+                  create_github_deployment_status(
+                      description="Cloudflare Pages deployment failed.",
+                      environment="production",
+                      state="failure",
+                  )
+                  exit(1)
+
+              if deployment["stage"] == "deploy" and deployment["status"] == "success":
+                  print("🤗 happy face")
+                  create_github_deployment_status(
+                      description="Cloudflare Pages deployment success.",
+                      environment="production",
+                      state="success",
+                  )
+                  exit(0)
+
+              print(f"🧐 {deployment['stage']} {deployment['status']}")
+              create_github_deployment_status(
+                  description="Cloudflare Pages deployment in progress.",
+                  environment="production",
+                  state="in_progress",
+              )
+              sleep(5)
+              count = count + 1
+
+          print("😭 super sad")
+          create_github_deployment_status(
+              description="Cloudflare Pages deployment status unknown.",
+              environment="production",
+              state="error",
+          )
+          exit(1)
+        with:
+          commit_hash: ${{ github.sha }}
+          github_deployment_id: ${{ steps.create-gh-deployment.outputs.gh_deployment_id }}
+          github_repository: ${{ github.repository }}
+          cloudflare_project_name: eddie-cf-pages-example
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_PROJECT_NAME: eddie-cf-pages-example
