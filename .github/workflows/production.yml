@@ -15,7 +15,7 @@ jobs:
         uses: eddiegroves/cloudflare-pages-deploy-action@719cd8d88870fddde26315a254503143d23f1ef5
         with:
           cloudflare-publish-directory: dist/
-          cloudflare-branch: production
+          cloudflare-environment: production
           cloudflare-pages-project-name: eddie-cf-pages-example
           cloudflare-account-id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           cloudflare-api-token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
