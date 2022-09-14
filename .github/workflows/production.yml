@@ -9,11 +9,11 @@ jobs:
     container:
       image: matrixcommander/matrix-commander:3.5.0
       env:
-        MATRIX_HOMESERVER: ${{ secret.MATRIX_HOMESERVER }}
-        MATRIX_DEVICE_ID: ${{ secret.MATRIX_DEVICE_ID }}
-        MATRIX_USER_ID: ${{ secret.MATRIX_USER_ID }}
-        MATRIX_ROOM_ID: ${{ secret.MATRIX_ROOM_ID }}
-        MATRIX_ACCESS_TOKEN: ${{ secret.MATRIX_ACCESS_TOKEN }}
+        MATRIX_HOMESERVER: ${{ secrets.MATRIX_HOMESERVER }}
+        MATRIX_DEVICE_ID: ${{ secrets.MATRIX_DEVICE_ID }}
+        MATRIX_USER_ID: ${{ secrets.MATRIX_USER_ID }}
+        MATRIX_ROOM_ID: ${{ secrets.MATRIX_ROOM_ID }}
+        MATRIX_ACCESS_TOKEN: ${{ secrets.MATRIX_ACCESS_TOKEN }}
     steps:
       - run: mkdir /data
         shell: bash
