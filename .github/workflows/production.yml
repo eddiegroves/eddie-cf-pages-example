@@ -17,10 +17,9 @@ jobs:
     steps:
       - run: mkdir /data/store
       - name: create creds
-        shell: bash
         run: |
          echo "{ \"homeserver\": \"$MATRIX_HOMESERVER\", \"device_id\": \"$MATRIX_DEVICE_ID\", \"user_id\": \"$MATRIX_USER_ID\", \"room_id\": \"$MATRIX_ROOM_ID\", \"access_token\": \"$MATRIX_ACCESS_TOKEN\" }" \
          > /data/credentials.json
-      - run: /bin/python3 /app/matrix_commander/matrix-commander -s /data/store -c /data/credentials.json -m "Test!"
-        shell: bash
+      - name: send message
+        run: /bin/python3 /app/matrix_commander/matrix-commander -s /data/store -c /data/credentials.json --log-level WARNING -m "Test!!"
      
