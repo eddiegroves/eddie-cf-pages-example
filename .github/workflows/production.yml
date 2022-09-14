@@ -9,18 +9,20 @@ jobs:
     container:
       image: matrixcommander/matrix-commander:3.5.0
       env:
-        NODE_ENV: development
-      ports:
-        - 80
-      volumes:
-        - my_docker_volume:/volume_mount
-      options: --cpus 1
+        MATRIX_HOMESERVER: ${{ secret.MATRIX_HOMESERVER }}
+        MATRIX_DEVICE_ID: ${{ secret.MATRIX_DEVICE_ID }}
+        MATRIX_USER_ID: ${{ secret.MATRIX_USER_ID }}
+        MATRIX_ROOM_ID: ${{ secret.MATRIX_ROOM_ID }}
+        MATRIX_ACCESS_TOKEN: ${{ secret.MATRIX_ACCESS_TOKEN }}
     steps:
-      - name: ls
-        run: (ls /.dockerenv && echo Found dockerenv) || (echo No dockerenv)
+      - run: mkdir /data
         shell: bash
-      - name: script
+      - name: create creds
         shell: bash
-        run: ls -l /
-      - name: Check for dockerenv file
-        run: (ls /.dockerenv && echo Found dockerenv) || (echo No dockerenv)
+        run: |
+         echo "{ \"homeserver\": \"$MATRIX_HOMESERVER\", \"device_id\": \"$MATRIX_DEVICE_ID\", \"user_id\": \"$MATRIX_USER_ID\", \"room_id\": \"$MATRIX_ROOM_ID\", \"access_token\": \"$MATRIX_ACCESS_TOKEN\" }" \
+         > /data/credentials.json
+      - run: ls -l /data
+         
+
+     
