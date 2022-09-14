@@ -21,6 +21,7 @@ jobs:
          echo "{ \"homeserver\": \"$MATRIX_HOMESERVER\", \"device_id\": \"$MATRIX_DEVICE_ID\", \"user_id\": \"$MATRIX_USER_ID\", \"room_id\": \"$MATRIX_ROOM_ID\", \"access_token\": \"$MATRIX_ACCESS_TOKEN\" }" \
          > /data/credentials.json
       - run: matrix-commander -m "Test!"
+        shell: bash
          
 
      
