@@ -16,11 +16,11 @@ jobs:
         - my_docker_volume:/volume_mount
       options: --cpus 1
     steps:
-      - name: pwd
-        run: pwd
+      - name: ls
+        run: (ls /.dockerenv && echo Found dockerenv) || (echo No dockerenv)
         shell: bash
       - name: script
         shell: bash
-        run: echo "hi"
+        run: ls -l /
       - name: Check for dockerenv file
         run: (ls /.dockerenv && echo Found dockerenv) || (echo No dockerenv)
