@@ -1,0 +1,38 @@
+name: Matrix Send Message
+
+on:
+  workflow_call:
+    inputs:
+      message:
+        required: true
+        type: string
+    secrets:
+      MATRIX_HOMESERVER:
+        required: true
+      MATRIX_USER_ID:
+        required: true
+      MATRIX_DEVICE_ID:
+        required: true
+      MATRIX_ROOM_ID:
+        required: true
+      MATRIX_ACCESS_TOKEN:
+        required: true
+jobs:
+  matrix-send-message:
+    runs-on: ubuntu-latest
+    container:
+      image: matrixcommander/matrix-commander:3.5.0
+      env:
+        MATRIX_HOMESERVER: ${{ secrets.MATRIX_HOMESERVER }}
+        MATRIX_DEVICE_ID: ${{ secrets.MATRIX_DEVICE_ID }}
+        MATRIX_USER_ID: ${{ secrets.MATRIX_USER_ID }}
+        MATRIX_ROOM_ID: ${{ secrets.MATRIX_ROOM_ID }}
+        MATRIX_ACCESS_TOKEN: ${{ secrets.MATRIX_ACCESS_TOKEN }}
+    steps:
+      - run: mkdir /data/store
+      - name: create creds
+        run: |
+          echo "{ \"homeserver\": \"$MATRIX_HOMESERVER\", \"device_id\": \"$MATRIX_DEVICE_ID\", \"user_id\": \"$MATRIX_USER_ID\", \"room_id\": \"$MATRIX_ROOM_ID\", \"access_token\": \"$MATRIX_ACCESS_TOKEN\" }" \
+          > /data/credentials.json
+      - name: send message
+        run: /bin/python3 /app/matrix_commander/matrix-commander -s /data/store -c /data/credentials.json --log-level WARNING -m "${{ inputs.message }}"
