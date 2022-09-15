@@ -8,8 +8,7 @@ jobs:
     uses: eddiegroves/eddie-cf-pages-example/.github/workflows/matrix-send-message.yml@test
     with:
       message: Hello 🥳
-    secrets:
-      envPAT: ${{ secrets.envPAT }}   
+    secrets: 
       MATRIX_HOMESERVER: ${{ secrets.MATRIX_HOMESERVER }}
       MATRIX_DEVICE_ID: ${{ secrets.MATRIX_DEVICE_ID }}
       MATRIX_USER_ID: ${{ secrets.MATRIX_USER_ID }}
