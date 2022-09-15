@@ -16,7 +16,7 @@ jobs:
       - name: Build
         run: make build
       - id: cloudflare-pages-deploy
-        uses: eddiegroves/cloudflare-pages-deploy-action@v1.0.0
+        uses: eddiegroves/cloudflare-pages-deploy-action@v1.0.1
         with:
           cloudflare-publish-directory: dist/
           cloudflare-environment: production
