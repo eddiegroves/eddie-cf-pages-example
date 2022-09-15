@@ -34,7 +34,9 @@ jobs:
     with:
       message: |
        🚀 Cloudflare pages deployment
-       ${{ needs.deploy.outputs.cloudflare-pages-url }}
+       ${{ needs.deploy.outputs.github-deployment-id }}
+       ${{ needs.deploy.outputs.cloudflare-pages-deployment-id }}
+       🌏 ${{ needs.deploy.outputs.cloudflare-pages-url }}
     secrets: 
       MATRIX_HOMESERVER: ${{ secrets.MATRIX_HOMESERVER }}
       MATRIX_DEVICE_ID: ${{ secrets.MATRIX_DEVICE_ID }}
