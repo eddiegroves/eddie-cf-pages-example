@@ -28,17 +28,16 @@ jobs:
     needs: deploy
     steps:
       - run: echo ${{ needs.deploy.outputs.github-deployment-id }}
-  container-test-job:
-    runs-on: ubuntu-latest
-    container:
-      image: node:14.16
-      env:
-        NODE_ENV: development
-      ports:
-        - 80
-      volumes:
-        - my_docker_volume:/volume_mount
-      options: --cpus 1
-    steps:
-      - name: Check for dockerenv file
-        run: (ls /.dockerenv && echo Found dockerenv) || (echo No dockerenv)
+  notification:
+    needs: deploy
+    uses: eddiegroves/matrix-send-message-action/.github/workflows/action.yml@v1.0.0
+    with:
+      message: |
+       🚀 Cloudflare pages deployment
+       ${{ needs.deploy.outputs.cloudflare-pages-url }}
+    secrets: 
+      MATRIX_HOMESERVER: ${{ secrets.MATRIX_HOMESERVER }}
+      MATRIX_DEVICE_ID: ${{ secrets.MATRIX_DEVICE_ID }}
+      MATRIX_USER_ID: ${{ secrets.MATRIX_USER_ID }}
+      MATRIX_ROOM_ID: ${{ secrets.MATRIX_ROOM_ID }}
+      MATRIX_ACCESS_TOKEN: ${{ secrets.MATRIX_ACCESS_TOKEN }}
