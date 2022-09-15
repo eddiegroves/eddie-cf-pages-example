@@ -5,12 +5,10 @@ on:
       - test
 jobs:
   call-workflow-passing-data:
-    uses: eddiegroves/eddie-cf-pages-example/.github/workflows/matrix-send-message.yml@test
+    uses: eddiegroves/matrix-send-message-action/.github/workflows/action.yml@v1.0.0
     with:
       message: |
-       Hello 🥳
-       This is a multiline message
-       Cya
+       Almost bed time 🛏
     secrets: 
       MATRIX_HOMESERVER: ${{ secrets.MATRIX_HOMESERVER }}
       MATRIX_DEVICE_ID: ${{ secrets.MATRIX_DEVICE_ID }}
